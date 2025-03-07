@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deadlock Detection & Prevention System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Deadlock Detection and Prevention</h1>
+
+        <!-- Input Section -->
+        <div>
+            <label>Number of Processes:</label>
+            <input type="number" id="processes" value="3" min="1">
+            <label>Number of Resources:</label>
+            <input type="number" id="resources" value="3" min="1">
+            <button onclick="createTables()">Create Tables</button>
+        </div>
+
+        <h2>Available Resources</h2>
+        <table id="availableTable">
+            <tr><th>R0</th><th>R1</th><th>R2</th></tr>
+            <tr><td><input type="number" value="0"></td><td><input type="number" value="0"></td><td><input type="number" value="0"></td></tr>
+        </table>
+
+        <h2>Allocation Matrix</h2>
+        <table id="allocationTable"></table>
+
+        <h2>Max Matrix</h2>
+        <table id="maxTable"></table>
+
+        <button onclick="checkDeadlock()">Check for Deadlock</button>
+        <div id="result" class="safe-state"></div>
+
+        <footer>
+            <p>&copy; 2025 Deadlock Detection System</p>
+        </footer>
+    </div>
+
+    <script>
+        // Create allocation and max tables dynamically based on user input
+        function createTables() {
+            const processes = document.getElementById('processes').value;
+            const resources = document.getElementById('resources').value;
+
+            document.getElementById('allocationTable').innerHTML = '';
+            document.getElementById('maxTable').innerHTML = '';
+
+            for (let i = 0; i < processes; i++) {
+                let row = '<tr>';
+                for (let j = 0; j < resources; j++) {
+                    row += `<td><input type="number" value="0"></td>`;
+                }
+                row += '</tr>';
+                document.getElementById('allocationTable').innerHTML += row;
+                document.getElementById('maxTable').innerHTML += row;
+            }
+        }
+
+        // Check if deadlock exists and fetch results from backend
+        function checkDeadlock() {
+            const result = document.getElementById('result');
+            const numProcesses = document.getElementById('processes').value;
+            const numResources = document.getElementById('resources').value;
+
+            const available = [];
+            const availableTable = document.getElementById('availableTable').getElementsByTagName('input');
+            for (let i = 0; i < numResources; i++) {
+                available.push(parseInt(availableTable[i].value));
+            }
+
+            const allocation = [];
+            const allocationTable = document.getElementById('allocationTable').getElementsByTagName('input');
+            for (let i = 0; i < numProcesses; i++) {
+                const row = [];
+                for (let j = 0; j < numResources; j++) {
+                    row.push(parseInt(allocationTable[i * numResources + j].value));
+                }
+                allocation.push(row);
+            }
+
+            const maxMatrix = [];
+            const maxTable = document.getElementById('maxTable').getElementsByTagName('input');
+            for (let i = 0; i < numProcesses; i++) {
+                const row = [];
+                for (let j = 0; j < numResources; j++) {
+                    row.push(parseInt(maxTable[i * numResources + j].value));
+                }
+                maxMatrix.push(row);
+            }
+
+            fetch('/check_deadlock', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    num_processes: numProcesses,
+                    num_resources: numResources,
+                    available: available,
+                    allocation: allocation,
+                    max_matrix: maxMatrix
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.result === 'Safe State') {
+                    result.textContent = `System is in Safe State! Safe Sequence: ${data.safe_sequence.join(' → ')}`;
+                    result.classList.add('safe-state');
+                } else {
+                    result.textContent = "Deadlock Detected!";
+                    result.classList.remove('safe-state');
+                }
+                result.style.display = 'block';
+            })
+            .catch(error => {
+                result.textContent = "Error checking the deadlock state!";
+                result.style.display = 'block';
+            });
+        }
+    </script>
+</body>
+</html>
