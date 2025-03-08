@@ -18,7 +18,7 @@ This is a **Deadlock Detection and Prevention** web application built with **Fla
   - Python
   - Flask
   - Flask-Cors (optional, for handling CORS)
-  - Flask-SQLAlchemy (optional, for database integration)
+
   
 ## Installation
 
